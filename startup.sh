@@ -13,7 +13,7 @@ sudo apt update
 sudo apt install -y ruby-full ruby-bundler build-essential
 
 # add repository key
-wget -qO - https://www.mongodb.org/static/pgp/server-4.2.asc | sudo apt-key add -
+wget -qO - http://www.mongodb.org/static/pgp/server-4.2.asc | sudo apt-key add -
 
 # add mongodb repository
 echo "deb [ arch=amd64,arm64 ] http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/4.2 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.2.list
