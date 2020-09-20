@@ -83,7 +83,7 @@ echo "sleep 3m for install updates"; sleep 5m; echo "start install ruby"
 7. Создаем файлы с переменными **variables.json** и **variables.json.example**
 ```json
 {
-  "key": "/home/appuser/key.json",
+  "key": "key.json",
   "fid": "abcde",
   "image": "ubuntu-1604-lts"
 }
