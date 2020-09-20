@@ -94,6 +94,76 @@ echo "sleep 3m for install updates"; sleep 5m; echo "start install ruby"
 "disk_name": "reddit-base",
 "disk_size_gb": "20",
 ```
+10. Для валидации в travis необходимо создать **key.json** идентичный рабочему
+```json
+{
+   "id": "abcd",
+   "service_account_id": "efj",
+   "created_at": "2020-09-20T13:09:29Z",
+   "key_algorithm": "RSA_2048",
+   "public_key": "-----BEGIN PUBLIC KEY-----\n",
+   "private_key": "-----BEGIN PRIVATE KEY-----\n"
+}
+```
+
+#### Задание со ⭐
+1. На базе **ubuntu16.json** создаем **immutable.json**
+```bash
+copy ubuntu16.json immutable.json
+```
+меняем необходимые элементы конфигурации
+```json
+"image_name": "reddit-full-{{timestamp}}",
+"image_family": "reddit-full",
+```
+2. Для создания **puma.service** воспользуемся [оффициальной документацией](https://github.com/puma/puma/blob/master/docs/systemd.md)
+3. Для передачи **puma.service** используем провижионер [file](https://www.packer.io/docs/provisioners/file)
+```json
+{
+  "type": "file",
+  "source": "files/puma.service",
+  "destination": "/tmp/puma.service"
+}
+```
+4. Для дальнейшего развертывания будем использовать уже знакомый **shell** и массив [inline](https://www.packer.io/docs/provisioners/shell)
+```json
+{
+  "type": "shell",
+  "inline": [
+      "sudo mv /tmp/puma.service /etc/systemd/system/puma.service",
+      "cd /opt",
+      "sudo apt-get install -y git",
+      "sudo chmod -R 0777 /opt",
+      "git clone -b monolith https://github.com/express42/reddit.git",
+      "cd reddit && bundle install",
+      "sudo systemctl daemon-reload && sudo systemctl start puma && sudo systemctl enable puma"
+  ]
+}
+```
+5. Все готово, проверяем конфиги и запускам билд
+```bash
+packer validate -var-file=./variables.json ./immutable.json
+packer build -var-file=./variables.json ./immutable.json
+```
+6. Используем документацию яндекса для создания **create-reddit-mv.sh**<так как я удалял до этого сеть, то создаем заново
+```
+yc vpc network create --name default
+```
+узнаем id образа
+```
+yc compute image list
+```
+И используя полученные параметры создаем **create-reddit-mv.sh** и проверяем
+```
+../config-scripts/create-reddit-vm.sh
+done (1m5s)
+id: ***
+folder_id: ***
+created_at: "2020-09-20T17:33:17Z"
+name: reddit-app
+zone_id: ru-centra
+...
+```
 
 ---
 ## Основные сервисы Yandex Cloud
