@@ -9,6 +9,10 @@ variable zone {
   # Значение по умолчанию
   default = "ru-central1-a"
 }
+variable region_id {
+  description = "region"
+  default     = "ru-central1"
+}
 variable public_key_path {
   # Описание переменной
   description = "Path to the public key used for ssh access"
@@ -24,4 +28,8 @@ variable service_account_key_file {
 }
 variable private_key_path {
   description = "path to private key"
+}
+variable instances {
+  description = "count instances"
+  default     = 1
 }
