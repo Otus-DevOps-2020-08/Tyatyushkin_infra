@@ -174,6 +174,114 @@ terraform destroy -auto-approve
 terraform apply -auto-approve
 ```
 
+#### Задание со ⭐⭐
+1. Создаем файл **lb.tf**
+2. Первым делом нужно  создать *target group*, которую мы позже подключим к балансировщику
+```terraform
+resource "yandex_lb_target_group" "loadbalancer" {
+  name      = "lb-group"
+  folder_id = var.folder_id
+  region_id = var.region_id
+
+  target {
+    address = yandex_compute_instance.app.network_interface.0.ip_address
+      subnet_id = var.subnet_id
+  }
+}
+```
+2. Теперь необходимо создать сам балансировщик и указать для него целевую группу
+```terraform
+resource "yandex_lb_network_load_balancer" "lb" {
+  name = "loadbalancer"
+  type = "external"
+
+  listener {
+    name        = "listener"
+    port        = 80
+    target_port = 9292
+
+    external_address_spec {
+      ip_version = "ipv4"
+    }
+  }
+
+  attached_target_group {
+    target_group_id = yandex_lb_target_group.loadbalancer.id
+
+    healthcheck {
+      name = "tcp"
+      tcp_options {
+        port = 9292
+      }
+    }
+  }
+}
+```
+3.  Добавляем переменные в **output.tf**
+```
+output "loadbalancer_ip_address" {
+  value = yandex_lb_network_load_balancer.lb.listener.*.external_address_spec[0].*.address
+}
+
+```
+и собираем
+```bash
+terraform plan; terraform apply -auto-approve
+```
+4. Создаем еще один ресурс **reddit-app2** по аналогии с первым
+```terraform
+resource "yandex_compute_instance" "app2" {
+  name = "reddit-app2"
+  ...
+}
+```
+добавляем его в целевую группу
+```
+  target {
+    address = yandex_compute_instance.app2.network_interface.0.ip_address
+      subnet_id = var.subnet_id
+  }
+```
+и правим **output.tf**
+```
+output "external_ip_addresses_app" {
+  value = yandex_compute_instance.app[*].network_interface.0.nat_ip_address
+}
+```
+5. Создаем инстанцы с помощью **count**, которую указываем как пременную, в **variables.tf** с дефолтным значением 1
+```
+variable instances {
+  description = "count instances"
+  default     = 1
+}
+```
+удаляем второй инстанс и редактируем первый
+```
+resource "yandex_compute_instance" "app" {
+  count = var.instances
+  name  = "reddit-app-${count.index}"
+  ...
+  connection {
+  ...
+    host  = self.network_interface.0.nat_ip_address
+  }
+  ...
+}
+```
+затем правим таргет групп используя блок **dynamic**
+```
+ dynamic "target" {
+    for_each = yandex_compute_instance.app.*.network_interface.0.ip_address
+    content {
+      subnet_id = var.subnet_id
+      address   = target.value
+    }
+  }
+```
+добавляем в наши переменные значение 2, собираем и проверяем
+```bash
+terraform plan; terraform apply -auto-approve
+```
 ---
 ## Подготовка образов с помощью packer
 
