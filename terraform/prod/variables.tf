@@ -33,3 +33,11 @@ variable instances {
   description = "count instances"
   default     = 1
 }
+variable app_disk_image {
+  description = "disk image for reddit app"
+  default = "reddit-app-base"
+}
+variable db_disk_image {
+  description = "disk image for mongodb"
+  default = "reddit-db-base"
+}
