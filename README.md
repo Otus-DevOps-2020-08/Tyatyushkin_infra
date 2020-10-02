@@ -1,6 +1,288 @@
 # Tyatyushkin_infra
 Tyatyushkin Infra repository
+---
+## Знакомство с Terraform
+#### Выполненные работы
 
+1. Создаем ветку **terraform-1** и устанавливаем дистрибутив Terraform
+```bash
+git checkout -b terraform-1
+wget wget https://releases.hashicorp.com/terraform/0.12.29/terraform_0.12.29_darwin_amd64.zip
+unzip wget https://releases.hashicorp.com/terraform/0.12.29/terraform_0.12.29_darwin_amd64.zip
+sudo mv terraform /usr/local/bin; rm terraform_0.12.29_darwin_amd64.zip
+terraform -v
+Terraform v0.12.29
+```
+2. Создаем каталог **terraform** с **main.tf** внутри и добавляем исключения в **.gitignore**
+```bash
+mkdir terraform; touch terraform/main.tf
+cat .gitignore
+...
+### Terraform files
+*.tfstate
+*.tfstate.*.backup
+*.tfstate.backup
+*.tfvars
+.terraform/
+...
+```
+3. Создаем сервисный аккаунт и профиль для работы terraform
+```bash
+yc iam service-account create --name terraform --description "account for terraform"
+yc resource-manager folder add-access-binding infra --role editor --subject serviceAccount:abcde
+yc iam key create --service-account-name terraform --output $HOME/devops/terraform.json
+yc config profile create terraform
+yc config set folder-id bcdef
+yc config set service-account-key $HOME/devops/terraform.json
+```
+Экспортируем переменную **YC_SERVICE_ACCOUNT_KEY_FILE**
+```
+cat ~/.zshrc
+...
+export YC_SERVICE_ACCOUNT_KEY_FILE=$HOME/devops/terraform.json
+...
+```
+4. Редактируем **main.tf** и проводим инцициализацию
+```
+cat main.tf
+provider "yandex" {
+  cloud_id  = "abcdef"
+  folder_id = "bcdefg"
+  zone      = "ru-central1-a"
+}
+```
+```
+terraform init
+```
+5. Создаем инстанс с помощью **terraform**
+Заполняем main.tf конфигурацией из задания и делаем
+```
+terraform plan
+```
+затем
+```
+terraform apply
+```
+у нас возникает ошибка
+```
+Error: Error while requesting API to create instance: server-request-id = 76bc9c1a-7e5f-b439-b97e-d497fe004f4b server-trace-id = b01c8f65b967fb64:ca4dd494e5960766:b01c8f65b967fb64:1 client-request-id = 89def97d-5027-43c9-b77d-9b96e0ee3ef6 client-trace-id = 70fba088-4a74-4cb0-9ab7-47d78b9fb330 rpc error: code = InvalidArgument desc = the specified number of cores is not available on platform "standard-v1"; allowed core number: 2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32
+```
+меняем количество ядер в **main.tf**
+```
+...
+  resources {
+    cores  = 2
+    memory = 2
+  }
+  ...
+```
+И пробуем еще раз
+```
+terraform apply
+...
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+```
+6. Провряем подключение и создаем **outputs.tf**.
+``` bash
+ssh-add ~/.ssh/yc
+ssh ubuntu@ip
+```
+не получилось?
+добавлаем строчки в наш **main.tf**
+```
+resource "yandex_compute_instance" "app" {
+...
+  metadata = {
+  ssh-keys = "ubuntu:${file("~/.ssh/yc.pub")}"
+  }
+...
+}
+```
+и пересоздаем
+```
+terraform destroy -auto-approve
+terraform apply -auto-approve
+```
+пробуем
+```
+ssh ubuntu@ip
+```
+все работает, теперь создаем **outputs.ts** для вывода внешнего IP
+```
+cat outputs.tf
+output "external_ip_address_app" {
+  value = yandex_compute_instance.app.network_interface.0.nat_ip_address
+}
+```
+проверяем
+```
+terraform refresh
+terraform output
+external_ip_address_app = 8.8.8.8
+```
+7. Настраиваем провижионеры, заливаем подготовленный за ранее puma.service на создаваемый инстанс для этого добавляем в **main.tf** провижионер file:
+```
+  provisioner "file" {
+    source      = "files/puma.service"
+    destination = "/tmp/puma.service"
+  }
+  ```
+  для запуска приложения используем скрипт **deploy.sh**, для которого используем remote-exec
+  ```
+    provisioner "remote-exec" {
+    script = "files/deploy.sh"
+  }
+  ```
+  для подключения используем  connection
+  ```
+    connection {
+    type  = "ssh"
+    host  = yandex_compute_instance.app.network_interface.0.nat_ip_address
+    user  = "ubuntu"
+    agent = false
+    # путь до приватного ключа
+    private_key = file("~/.ssh/yc")
+  }
+  ```
+для того чтобы наши изменения применились
+```
+terraform taint yandex_compute_instance.app
+terraform plan
+terraform apply
+```
+8.  Использование input vars, для начала опишем наши переменные в **variables.tf**
+```
+...
+variable cloud_id {
+  description = "Cloud"
+}
+...
+```
+параметры для переменные записываем в **terraform.tfvars**
+```
+...
+cloud_id  = "abv"
+...
+```
+теперь указываем эти параметры в **main.tf**
+```
+cloud_id                 = var.cloud_id
+```
+И так делаем для других параметров, затем перепроверяем
+```
+terraform destroy -auto-approve
+terraform apply -auto-approve
+```
+
+#### Задание со ⭐⭐
+1. Создаем файл **lb.tf**
+2. Первым делом нужно  создать *target group*, которую мы позже подключим к балансировщику
+```terraform
+resource "yandex_lb_target_group" "loadbalancer" {
+  name      = "lb-group"
+  folder_id = var.folder_id
+  region_id = var.region_id
+
+  target {
+    address = yandex_compute_instance.app.network_interface.0.ip_address
+      subnet_id = var.subnet_id
+  }
+}
+```
+2. Теперь необходимо создать сам балансировщик и указать для него целевую группу
+```terraform
+resource "yandex_lb_network_load_balancer" "lb" {
+  name = "loadbalancer"
+  type = "external"
+
+  listener {
+    name        = "listener"
+    port        = 80
+    target_port = 9292
+
+    external_address_spec {
+      ip_version = "ipv4"
+    }
+  }
+
+  attached_target_group {
+    target_group_id = yandex_lb_target_group.loadbalancer.id
+
+    healthcheck {
+      name = "tcp"
+      tcp_options {
+        port = 9292
+      }
+    }
+  }
+}
+```
+3.  Добавляем переменные в **output.tf**
+```
+output "loadbalancer_ip_address" {
+  value = yandex_lb_network_load_balancer.lb.listener.*.external_address_spec[0].*.address
+}
+
+```
+и собираем
+```bash
+terraform plan; terraform apply -auto-approve
+```
+4. Создаем еще один ресурс **reddit-app2** по аналогии с первым
+```terraform
+resource "yandex_compute_instance" "app2" {
+  name = "reddit-app2"
+  ...
+}
+```
+добавляем его в целевую группу
+```
+  target {
+    address = yandex_compute_instance.app2.network_interface.0.ip_address
+      subnet_id = var.subnet_id
+  }
+```
+и правим **output.tf**
+```
+output "external_ip_addresses_app" {
+  value = yandex_compute_instance.app[*].network_interface.0.nat_ip_address
+}
+```
+5. Создаем инстанцы с помощью **count**, которую указываем как пременную, в **variables.tf** с дефолтным значением 1
+```
+variable instances {
+  description = "count instances"
+  default     = 1
+}
+```
+удаляем второй инстанс и редактируем первый
+```
+resource "yandex_compute_instance" "app" {
+  count = var.instances
+  name  = "reddit-app-${count.index}"
+  ...
+  connection {
+  ...
+    host  = self.network_interface.0.nat_ip_address
+  }
+  ...
+}
+```
+затем правим таргет групп используя блок **dynamic**
+```
+ dynamic "target" {
+    for_each = yandex_compute_instance.app.*.network_interface.0.ip_address
+    content {
+      subnet_id = var.subnet_id
+      address   = target.value
+    }
+  }
+```
+добавляем в наши переменные значение 2, собираем и проверяем
+```bash
+terraform plan; terraform apply -auto-approve
+```
+---
 ## Подготовка образов с помощью packer
 
 #### Выполненные работы
