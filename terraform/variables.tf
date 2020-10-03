@@ -6,6 +6,7 @@ variable folder_id {
 }
 variable zone {
   description = "Zone"
+  # Значение по умолчанию
   default = "ru-central1-a"
 }
 variable region_id {
@@ -39,4 +40,13 @@ variable app_disk_image {
 variable db_disk_image {
   description = "disk image for mongodb"
   default = "reddit-db-base"
+}
+variable access_key {
+  description = "key id"
+}
+variable secret_key {
+  description = "secret key"
+}
+variable bucket_name {
+  description = "bucket name"
 }
