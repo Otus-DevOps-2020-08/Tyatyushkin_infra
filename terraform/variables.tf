@@ -6,7 +6,6 @@ variable folder_id {
 }
 variable zone {
   description = "Zone"
-  # Значение по умолчанию
   default = "ru-central1-a"
 }
 variable region_id {
@@ -14,7 +13,6 @@ variable region_id {
   default     = "ru-central1"
 }
 variable public_key_path {
-  # Описание переменной
   description = "Path to the public key used for ssh access"
 }
 variable image_id {
@@ -35,11 +33,11 @@ variable instances {
 }
 variable app_disk_image {
   description = "disk image for reddit app"
-  default = "reddit-app-base"
+  default     = "reddit-app-base"
 }
 variable db_disk_image {
   description = "disk image for mongodb"
-  default = "reddit-db-base"
+  default     = "reddit-db-base"
 }
 variable access_key {
   description = "key id"

@@ -6,3 +6,4 @@ public_key_path           = "~/.ssh/yc.pub"
 service_account_key_file  = "key.json"
 private_key_path          = "~/.ssh/ycr"
 instances                 = 1
+prov                      = true

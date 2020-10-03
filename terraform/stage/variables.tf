@@ -6,7 +6,7 @@ variable folder_id {
 }
 variable zone {
   description = "Zone"
-  default = "ru-central1-a"
+  default     = "ru-central1-a"
 }
 variable region_id {
   description = "region"
@@ -34,9 +34,13 @@ variable instances {
 }
 variable app_disk_image {
   description = "disk image for reddit app"
-  default = "reddit-app-base"
+  default     = "reddit-app-base"
 }
 variable db_disk_image {
   description = "disk image for mongodb"
-  default = "reddit-db-base"
+  default     = "reddit-db-base"
+}
+variable prov {
+  description = "using provisioner"
+  default = true
 }
