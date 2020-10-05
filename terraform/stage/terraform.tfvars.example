@@ -8,6 +8,4 @@ private_key_path          = "~/.ssh/ycr"
 instances                 = 1
 app_disk_image            = "reddit-app-base"
 db_disk_image             = "reddit-db-base"
-access_key                = "keyId"
-secret_key                = "secret"
-bucket_name               = "test"
+prov                      = true
