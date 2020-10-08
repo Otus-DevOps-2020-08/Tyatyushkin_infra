@@ -1,6 +1,96 @@
 # Tyatyushkin_infra
 Tyatyushkin Infra repository
 ---
+## Знакомство с Ansible
+#### Выполненные работы:
+
+1. Создаем ветку **ansible-1**
+2. Устанавлием Ansible. В лекции есть реккомендация ставить ansible через pip, поэтому создаем **requirements.txt**, но ставить будем с помощью **brew**
+```
+brew install ansible
+```
+3. Создаем каталог **ansible** и собираем терраформом окружение **stage**
+4. Из данных полученных в **output** создаем **inventory** файл в каталоге ansible и проверяем доступность хостов модулем **ping**
+```
+ansible appserver -i ./inventory -m ping
+```
+5. Создаем файл конфигурации **ansible.cfg** чтобы убрать некоторые параметры из инвентори и упростить работу с ansible
+6. Формируем инвентори в yml-формате: **inventory.yml**
+7. Изучаем новые модули для работы с ансиблом и учим слово **идемпотентность**
+8. Пишем первый **playbook**, **clone.yml**
+```yml
+---
+- name: Clone
+  hosts: app
+  tasks:
+    - name: Clone repo
+      git:
+        repo: https://github.com/express42/reddit.git
+        dest: /home/ubuntu/reddit
+
+```
+#### Задание со ⭐⭐
+1. Нам необходимо создать инвентори в формате json, поэтому первым делом создадим файлик **inventory.json**
+```
+touch inventory.json
+```
+2. По условию задачи нельзя использовать модули и файл не должен быть статическим, но и до конца динамическим он быть не может, поэтому буду называть его **полудинамический**. Для реализации этого файла, можно использовать выгрузку из terraform сформировав template, но я выбрал другую реализацию.
+3. Находим [шаблон](https://gist.github.com/tuxfight3r/2c027f8fd70333a8288e) для динамического инвентори на bash и копируем в наш **inventory.json**
+```
+#!/bin/bash
+
+if [ "$1" == "--list" ] ; then
+cat<<EOF
+{
+  "bash_hosts": {
+  "hosts": [
+    "10.220.21.24",
+    "10.220.21.27"
+  ],
+  "vars": {
+    "host_proxy_var": "proxy2"
+  }
+  },
+  "_meta": {
+  "hostvars": {
+    "10.220.21.24": {
+    "host_specific_var": "towerhost"
+    },
+    "10.220.21.27": {
+    "host_specific_var": "testhost"
+    }
+  }
+  }
+}
+EOF
+elif [ "$1" == "--host" ]; then
+  echo '{"_meta": {"hostvars": {}}}'
+else
+  echo "{ }"
+fi
+```
+4. Нам нужны переменные, чтобы заменить дефольные параметры и сделать инвентори **полудинамическим**, для этого я решил исполльзовать комманду **yc compute instances list** , а затем распарсить и выдрать оттуда необходимые значения.
+```
+server1ip=$(yc compute instances list | awk '{print $10}' | sed '/^[[:space:]]*$/d' |  sed  '1d' | head -1)
+server1host=$(yc compute instances list | awk '{print $4}' | sed '/^[[:space:]]*$/d' |  sed  '1d' | head -1| tr - _)
+server2ip=$(yc compute instances list | awk '{print $10}' | sed '/^[[:space:]]*$/d' |  sed  '1d' | tail -1)
+server2host=$(yc compute instances list | awk '{print $4}' | sed '/^[[:space:]]*$/d' |  sed  '1d' | tail -1| tr - _)
+```
+5. Заменяем дефолтные значения нашими переменными и делаем файл исполняемым, затем идем править **ansible.cfg**, чтобы все что мы нагородили заработало:
+```
+[defaults]
+inventory = ./inventory.json
+remote_user = ubuntu
+private_key_file = ~/.ssh/appuser
+host_key_checking = False
+retry_files_enabled = False
+
+[inventory]
+enable_plugins = script
+```
+6. Проверяем, все работает. Но для прохождения валидации в travis возвращаем предыдущие параметры.
+
+---
 ##  Работа с Terraform, принципы организации инфраструктурного кода и работа над инфраструктурой в команде.
 #### Выполненные работы:
 
