@@ -1,0 +1,34 @@
+#!/bin/bash
+
+server1ip=$(yc compute instances list | awk '{print $10}' | sed '/^[[:space:]]*$/d' |  sed  '1d' | head -1)
+server1host=$(yc compute instances list | awk '{print $4}' | sed '/^[[:space:]]*$/d' |  sed  '1d' | head -1| tr - _)
+server2ip=$(yc compute instances list | awk '{print $10}' | sed '/^[[:space:]]*$/d' |  sed  '1d' | tail -1)
+server2host=$(yc compute instances list | awk '{print $4}' | sed '/^[[:space:]]*$/d' |  sed  '1d' | tail -1| tr - _)
+
+
+if [ "$1" == "--list" ] ; then
+cat<<EOF
+{
+  "$server1host": {
+	"hosts": ["$server1ip"]
+  },
+  "$server2host": {
+  	"hosts": ["$server2ip"]
+  },
+  "_meta": {
+	"hostvars": {
+	  "$server1ip": {
+		"host_specific_var": "$server1host"
+	  },
+	  "$server2ip": {
+		"host_specific_var": "$server2host"
+	  }
+	}
+  }
+}
+EOF
+elif [ "$1" == "--host" ]; then
+  echo '{"_meta": {"hostvars": {}}}'
+else
+  echo "{ }"
+fi
