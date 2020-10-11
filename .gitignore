@@ -7,3 +7,6 @@ variables.json
 *.tfstate.backup
 *.tfvars
 .terraform/
+
+### Ansible files
+*.retry
