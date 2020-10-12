@@ -1,6 +1,88 @@
 # Tyatyushkin_infra
 Tyatyushkin Infra repository
 ---
+## Деплой и управление конфигурацией с Ansible
+#### Выполненные работы:
+
+1. Создаем ветку **ansible-2**
+2. Создаем плейбук **reddit_app.yml**  заполняем его и тестируем
+3. Создаем плейбук на несколько сценариев **reddit_app2.yml**
+4. Разбиваем наш плейбук на несколько: **app.yml**, **db.yml**, **deploy.yml** и переименовываем наши старые плейбуки
+5. Модифицируем наши провижионеры в packer, меняеем их на ansible и перезапекаем образы, указываем новые образы в переменных терраформа.
+
+#### Задание со ⭐⭐
+1. Для задания со свездочкой мы снова модифицируем **ansible.cfg**
+```
+[defaults]
+inventory = ./inventory.json
+remote_user = ubuntu
+private_key_file = ~/.ssh/appuser
+host_key_checking = False
+retry_files_enabled = False
+
+[inventory]
+enable_plugins = script
+```
+2. Теперь модифицируем наш **inventory.json**. Добавляем в него новую переменную **db_ip**  в которую записывается адресс базы данных и делаем так чтобы наши группы соответсвовали тем что в плейбуках.
+```bash
+#!/bin/bash
+
+server1ip=$(yc compute instances list | awk '{print $10}' | sed '/^[[:space:]]*$/d' |  sed  '1d' | head -1)
+server1host=$(yc compute instances list | awk '{print $4}' | sed '/^[[:space:]]*$/d' |  sed  '1d' | head -1| tr - _)
+server2ip=$(yc compute instances list | awk '{print $10}' | sed '/^[[:space:]]*$/d' |  sed  '1d' | tail -1)
+server2host=$(yc compute instances list | awk '{print $4}' | sed '/^[[:space:]]*$/d' |  sed  '1d' | tail -1| tr - _)
+
+if [ "${server1host:7}" == "db" ]; then
+  db_ip=$server1ip
+else
+  db_ip=$server2ip
+fi
+
+
+
+if [ "$1" == "--list" ] ; then
+cat<<EOF
+{
+  "${server1host:7}": {
+  "hosts": ["$server1ip"],
+  "vars": {
+    "db_ip": "$db_ip"
+  }
+  },
+  "${server2host:7}": {
+    "hosts": ["$server2ip"],
+    "vars": {
+      "db_ip": "$db_ip"
+    }
+  },
+  "_meta": {
+  "hostvars": {
+    "$server1ip": {
+    "host_specific_var": "$server1host"
+    },
+    "$server2ip": {
+    "host_specific_var": "$server2host"
+    }
+  }
+  }
+}
+EOF
+elif [ "$1" == "--host" ]; then
+  echo '{"_meta": {"hostvars": {}}}'
+else
+  echo "{ }"
+fi
+
+```
+3. Теперь передаем нашу переменную в **app.yml**
+```
+  vars:
+   db_host: "{{db_ip}}"
+```
+4. Запускаем и проверяем, все работает.
+5. Чтобы пройти проверку у тревиса, возвращаем ansible.cfg в исходное состоянием и добавляем в инвентори переменную db_ip.
+
+---
 ## Знакомство с Ansible
 #### Выполненные работы:
 
