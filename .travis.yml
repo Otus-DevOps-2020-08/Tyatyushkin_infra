@@ -6,7 +6,7 @@ before_install:
 - curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 - sudo python get-pip.py
 - sudo pip install ansible
-- sudo pip install ansible-lint==3
+- sudo pip install ansible-lint==3.5.0
 - sudo apt-get install unzip git -y
 - wget https://releases.hashicorp.com/terraform/0.12.18/terraform_0.12.18_linux_amd64.zip
 - sudo unzip terraform_0.12.18_linux_amd64.zip -d /usr/local/bin
