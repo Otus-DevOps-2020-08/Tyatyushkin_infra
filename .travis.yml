@@ -3,6 +3,8 @@ sudo: required
 language: bash
 before_install:
 - curl https://raw.githubusercontent.com/express42/otus-homeworks/2020-08/run.sh | bash
+- sudo apt-get update
+- sudo apt-get update python
 - curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 - sudo python get-pip.py
 - sudo pip install cryptography==2.2.2
