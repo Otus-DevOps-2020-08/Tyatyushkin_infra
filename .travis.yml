@@ -5,6 +5,7 @@ before_install:
 - curl https://raw.githubusercontent.com/express42/otus-homeworks/2020-08/run.sh | bash
 - curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 - sudo python get-pip.py
+- sudo pip install cryptography==2.2.2
 - sudo pip install ansible
 - sudo pip install ansible-lint==3.5.0
 - sudo apt-get install unzip git -y
