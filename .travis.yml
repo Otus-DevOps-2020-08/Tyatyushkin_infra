@@ -16,11 +16,11 @@ before_install:
 - terraform --version
 - packer --version
 - ansible-lint --version
-- packer validate -var-file=packer/variables.json.example packer/app.json
-- packer validate -var-file=packer/variables.json.example packer/db.json
+#- packer validate -var-file=packer/variables.json.example packer/app.json
+#- packer validate -var-file=packer/variables.json.example packer/db.json
 - cd packer
-- packer validate -var-file=variables.json.example ubuntu16.json
-- packer validate -var-file=variables.json.example immutable.json
+#- packer validate -var-file=variables.json.example ubuntu16.json
+#- packer validate -var-file=variables.json.example immutable.json
 - cd ../terraform/stage && mv backend.tf backend.tf.example && terraform init && terraform validate
 - tflint
 - cd ../prod && mv backend.tf backend.tf.example && terraform init && terraform validate
