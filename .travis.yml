@@ -5,8 +5,8 @@ before_install:
 - curl https://raw.githubusercontent.com/express42/otus-homeworks/2020-08/run.sh | bash
 - curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 - sudo python get-pip.py
-- sudo pip3 install ansible
-- sudo pip3 install ansible-lint
+- sudo pip install ansible
+- sudo pip install ansible-lint==3
 - sudo apt-get install unzip git -y
 - wget https://releases.hashicorp.com/terraform/0.12.18/terraform_0.12.18_linux_amd64.zip
 - sudo unzip terraform_0.12.18_linux_amd64.zip -d /usr/local/bin
