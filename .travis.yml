@@ -7,7 +7,7 @@ before_install:
 - sudo python get-pip.py
 - sudo pip install ansible
 - sudo pip install ansible-lint
-- sudo apt-get install unzip
+- sudo apt-get install unzip git -y
 - wget https://releases.hashicorp.com/terraform/0.12.18/terraform_0.12.18_linux_amd64.zip
 - sudo unzip terraform_0.12.18_linux_amd64.zip -d /usr/local/bin
 - curl -L "$(curl -Ls https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep -o -E "https://.+?_linux_amd64.zip")" -o tflint.zip && unzip tflint.zip && rm tflint.zip
