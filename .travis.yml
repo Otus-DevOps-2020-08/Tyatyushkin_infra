@@ -2,8 +2,40 @@ dist: trusty
 sudo: required
 language: bash
 before_install:
-- curl https://raw.githubusercontent.com/express42/otus-homeworks/2020-08/run.sh |
-  bash
+- curl https://raw.githubusercontent.com/express42/otus-homeworks/2020-08/run.sh | bash
+- curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+- sudo python get-pip.py
+- sudo pip install ansible
+- sudo pip install ansible-lint
+- sudo apt-get install unzip
+- wget https://releases.hashicorp.com/terraform/0.12.18/terraform_0.12.18_linux_amd64.zip
+- sudo unzip terraform_0.12.18_linux_amd64.zip -d /usr/local/bin
+- curl -L "$(curl -Ls https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep -o -E "https://.+?_linux_amd64.zip")" -o tflint.zip && unzip tflint.zip && rm tflint.zip
+- sudo mv tflint /usr/local/bin
+- tflint -v
+- terraform --version
+- packer --version
+- ansible-lint --version
+- packer validate -var-file=packer/variables.json.example packer/app.json
+- packer validate -var-file=packer/variables.json.example packer/db.json
+- cd packer
+- packer validate -var-file=variables.json.example ubuntu16.json
+- packer validate -var-file=variables.json.example immutable.json
+- cd ../terraform/stage && mv backend.tf backend.tf.example && terraform init && terraform validate
+- tflint
+- cd ../prod && mv backend.tf backend.tf.example && terraform init && terraform validate
+- tflint
+- cd ../../ansible && ansible-lint playbooks/deploy.yml
+- ansible-lint playbooks/clone.yml
+- ansible-lint playbooks/db.yml
+- ansible-lint playbooks/packer_app.yml
+- ansible-lint playbooks/packer_db.yml
+- ansible-lint playbooks/reddit_app_one_play.yml
+- ansible-lint playbooks/reddit_app_multiple_plays.yml
+- ansible-lint playbooks/users.yml
+- ansible-galaxy install -r environments/stage/requirements.yml
+- ansible-lint playbooks/app.yml --exclude=roles/jdauphant.nginx
+- ansible-lint playbooks/site.yml --exclude=roles/jdauphant.nginx
 notifications:
   slack:
     rooms:
