@@ -29,8 +29,8 @@ before_install:
 - cd ../prod && mv backend.tf backend.tf.example && terraform init && terraform validate
 - tflint
 - cd ../../ansible
-#- ansible-lint playbooks/deploy.yml
-#- ansible-lint playbooks/clone.yml
+- ansible-lint playbooks/deploy.yml
+- ansible-lint playbooks/clone.yml
 - ansible-lint playbooks/db.yml
 - ansible-lint playbooks/packer_app.yml
 - ansible-lint playbooks/packer_db.yml
