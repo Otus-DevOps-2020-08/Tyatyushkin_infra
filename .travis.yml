@@ -4,7 +4,6 @@ language: bash
 before_install:
 - curl https://raw.githubusercontent.com/express42/otus-homeworks/2020-08/run.sh | bash
 - sudo apt-get update
-- sudo apt-get install python
 - curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 - sudo python get-pip.py
 - sudo pip install cryptography==2.2.2
@@ -14,7 +13,7 @@ before_install:
 - wget https://releases.hashicorp.com/terraform/0.12.18/terraform_0.12.18_linux_amd64.zip
 - sudo unzip terraform_0.12.18_linux_amd64.zip -d /usr/local/bin
 - wget https://releases.hashicorp.com/packer/1.6.5/packer_1.6.5_linux_amd64.zip
-- sudo unzip packer_1.6.5_linux_amd64.zip -d /usr/local/bin
+- sudo unzip -o packer_1.6.5_linux_amd64.zip -d /usr/local/bin
 - curl -L "$(curl -Ls https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep -o -E "https://.+?_linux_amd64.zip")" -o tflint.zip && unzip tflint.zip && rm tflint.zip
 - sudo mv tflint /usr/local/bin
 - tflint -v
