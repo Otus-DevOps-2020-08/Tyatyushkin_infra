@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/Tyatyushkin/otus_db.svg?branch=master)](https://travis-ci.com/Tyatyushkin/otus_db)
+
 Role Name
 =========
 

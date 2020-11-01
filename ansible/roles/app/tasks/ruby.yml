@@ -7,3 +7,4 @@
       - build-essential
     update_cache: yes
     state: present
+  tags: [ruby]
