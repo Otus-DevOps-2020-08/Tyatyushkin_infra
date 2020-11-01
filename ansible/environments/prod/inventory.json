@@ -1,0 +1,34 @@
+#!/bin/bash
+
+if [ "$1" == "--list" ] ; then
+cat<<EOF
+{
+   "${server1host:7}": {
+	"hosts": ["$server1ip"],
+	"vars": {
+		"db_host": "$db_ip"
+	}
+  },
+  "${server2host:7}": {
+  	"hosts": ["$server2ip"],
+  	"vars": {
+  		"db_host": "$db_ip"
+  	}
+  },
+  "_meta": {
+	"hostvars": {
+	  "$server1ip": {
+		"host_specific_var": "$server1host"
+	  },
+	  "$server2ip": {
+		"host_specific_var": "$server2host"
+	  }
+	}
+  }
+}
+EOF
+elif [ "$1" == "--host" ]; then
+  echo '{"_meta": {"hostvars": {}}}'
+else
+  echo "{ }"
+fi

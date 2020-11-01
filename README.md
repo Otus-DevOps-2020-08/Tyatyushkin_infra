@@ -1,5 +1,110 @@
+[![Build Status](https://travis-ci.com/Otus-DevOps-2020-08/Tyatyushkin_infra.svg?branch=master)](https://travis-ci.com/Otus-DevOps-2020-08/Tyatyushkin_infra)
+
 # Tyatyushkin_infra
 Tyatyushkin Infra repository
+---
+## Работа с ролями и окружениями Ansible
+#### Выполненные работы
+
+1. Создаем ветку **ansible-3**
+2. С помощью **ansible-galaxy** создаем заготовки пол роли
+```bash
+ansible-galaxy init app
+ansible-galaxy init db
+```
+3. Переводим наши плейбуки в роли
+4. Модифицируем плейбуки на запуск ролей
+```
+---
+- name: Configure MongoDB
+  hosts: db
+  become: true
+
+
+  roles:
+    - db
+```
+5. Проверяем фунцкионал ролей
+```bash
+ansible-playbook site.yml
+```
+6. Модифицируем **ansible.cfg** и вводим переменные окружения для сред **prod** и **stage**
+7. Организуем плейбуки согласно **Best Practices**
+8. Учимся использовать комьюнити роли на примере **jdauphant.nginx**
+9. Учимся использовать **ansible-vault**
+10. Проверяем функционал
+
+#### Задание со ⭐
+1. Для использования динамического инвентори модифицируем **ansible.cfg**
+2. Копируем **inventory.json** из директории old  в наши окружения
+```bash
+cp old/inventory.json environment/stage/
+cp old/inventory.json environment/stage/
+```
+3. Модифицируем **inventory.json** изменим переменную с db_ip на **db_host**
+```
+...
+"vars": {
+  "db_host": "$db_ip"
+}
+...
+```
+4. Так как у групповой переменной переменной **db_host** приоритет выше закомментируем ее в **group_vars/app**
+5. Проверяем все успешно
+6. Для прохожденим валидации в **travis** копируем наш **inventory.json** в **inventory.sh**
+7. Убираем из **inventory.json** всю подготовительную часть
+8. Валидация в **travis** пройдена
+
+#### Задание со ⭐⭐
+1. Модифицируем наш **.travis.yml**
+2. Добавляем проверку **packer**, в системе присутвует packer, но старая версия в которой нет яндекс провайдера, поэтому нам необходимо закачать дистрибутив и выполннить проверки.
+```
+...
+- wget https://releases.hashicorp.com/packer/1.6.5/packer_1.6.5_linux_amd64.zip
+- sudo unzip -o packer_1.6.5_linux_amd64.zip -d /usr/local/bin
+- /usr/local/bin/packer validate -var-file=packer/variables.json.example packer/app.json
+- /usr/local/bin/packer validate -var-file=packer/variables.json.example packer/db.json
+- cd packer
+- /usr/local/bin/packer validate -var-file=variables.json.example ubuntu16.json
+- /usr/local/bin/packer validate -var-file=variables.json.example immutable.json
+...
+```
+3. Для проверки **terraform** нужно скачать **tflint**, как и сам терраформ
+```
+...
+- wget https://releases.hashicorp.com/terraform/0.12.18/terraform_0.12.18_linux_amd64.zip
+- sudo unzip terraform_0.12.18_linux_amd64.zip -d /usr/local/bin
+- curl -L "$(curl -Ls https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep -o -E "https://.+?_linux_amd64.zip")" -o tflint.zip && unzip tflint.zip && rm tflint.zip
+- sudo mv tflint /usr/local/bin
+- cd ../terraform/stage && mv backend.tf backend.tf.example && terraform init && terraform validate
+- tflint
+- cd ../prod && mv backend.tf backend.tf.example && terraform init && terraform validate
+- tflint
+...
+```
+4. Для проверки **ansible** нам нужен **ansible-lint**, для того чтобы все работало, необходимо указывать более старую версию пакетов.
+```
+...
+- curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+- sudo python get-pip.py
+- sudo pip install cryptography==2.2.2
+- sudo pip install ansible==2.6
+- sudo pip install ansible-lint==3.5.0
+- ansible-lint playbooks/deploy.yml
+- ansible-lint playbooks/clone.yml
+- ansible-lint playbooks/db.yml
+- ansible-lint playbooks/packer_app.yml
+- ansible-lint playbooks/packer_db.yml
+- ansible-lint playbooks/reddit_app_one_play.yml
+- ansible-lint playbooks/reddit_app_multiple_plays.yml
+- ansible-lint playbooks/users.yml
+- ansible-galaxy install -r environments/stage/requirements.yml
+- ansible-lint playbooks/app.yml --exclude=roles/jdauphant.nginx
+- ansible-lint playbooks/site.yml --exclude=roles/jdauphant.nginx
+...
+```
+5. Добавляем в **README.md** бейдж со статусом билда
+
 ---
 ## Деплой и управление конфигурацией с Ansible
 #### Выполненные работы:
@@ -11,7 +116,7 @@ Tyatyushkin Infra repository
 5. Модифицируем наши провижионеры в packer, меняеем их на ansible и перезапекаем образы, указываем новые образы в переменных терраформа.
 
 #### Задание со ⭐⭐
-1. Для задания со свездочкой мы снова модифицируем **ansible.cfg**
+1. Для задания со звездочкой мы снова модифицируем **ansible.cfg**
 ```
 [defaults]
 inventory = ./inventory.json
@@ -23,7 +128,7 @@ retry_files_enabled = False
 [inventory]
 enable_plugins = script
 ```
-2. Теперь модифицируем наш **inventory.json**. Добавляем в него новую переменную **db_ip**  в которую записывается адресс базы данных и делаем так чтобы наши группы соответсвовали тем что в плейбуках.
+2. Теперь модифицируем наш **inventory.json**. Добавляем в него новую переменную **db_ip**  в которую записывается адрес базы данных и делаем так чтобы наши группы соответсвовали тем что в плейбуках.
 ```bash
 #!/bin/bash
 
