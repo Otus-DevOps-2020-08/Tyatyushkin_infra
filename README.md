@@ -2,6 +2,115 @@
 
 # Tyatyushkin_infra
 Tyatyushkin Infra repository
+
+---
+
+## Ansible-4
+
+#### Выполненные работы
+
+1. Установка **vagrant**
+2. Описываем локальную инфраструктуру в **Vagrantfile**
+3. Дорабатываем роли и учимся использовать *provisioner*
+3. Переделываем *deploy.yml*
+4. Проверяем сборку в vagrant
+5. Устанавливаем **pip**, а затем с помощью его **virtualenv**
+6. Устанавливаем все необходимые пакеты *pip install -r requirements.txt*
+7. Создаем заготовку molecule с помощью команды *molecule init scenario --scenario-name default -r db -d vagrant*
+8. Добавляем собственнные тесты
+9. Собираем и тестируем нашу конфигурацию
+
+#### Самостоятельные задания:
+1. Пишем тест для проверки доступности порта 27017:
+```
+# check 27017 port
+def test_mongo_port(host):
+    socket = host.socket('tcp://0.0.0.0:27017')
+    assert socket.is_listening
+```
+2. Используем роли db и app в packer_db.yml
+```
+ "type": "ansible",
+ "playbook_file": "ansible/playbooks/packer_db.yml",
+ "extra_arguments": ["--tags","install"],
+ "ansible_env_vars": ["ANSIBLE_ROLES_PATH={{ pwd }}/ansible/roles"]
+```
+ и packer_app.yml
+ ```
+ "type": "ansible",
+ "playbook_file": "ansible/playbooks/packer_app.yml",
+ "extra_arguments": ["--tags","ruby"],
+ "ansible_env_vars": ["ANSIBLE_ROLES_PATH={{ pwd }}/ansible/roles"]
+ ```
+
+ #### Задания со ⭐
+
+ 1. Для работы nginx нам необходимо внести изменения в **Vagrantfile**
+ ```
+  ansible.extra_vars = {
+    deploy_user" => "vagrant",
+    nginx_sites: {
+      default: ["listen 80", "server_name 'reddit'", "location / {proxy_pass http://127.0.0.1:9292;}"]
+    }
+  }
+ ```
+
+ 2. Создаем отдельный репозиторий [repo](https://github.com/Tyatyushkin/otus_db)
+ 3. Создаем шаблон с помощью *ansible-galaxy*
+ 4. Правим **requirements.yml** в обоих окружениях
+ ```
+ - src: jdauphant.nginx
+  version: v2.21.1
+# DB from github
+- name: db
+  src: https://github.com/tyatyushkin/otus_db
+```
+5. Копируем роль в отдельный репозиторий
+6. Удаляем роль db из исходного репозитория и добавляем с помощью *ansible-galaxy install -r environments/stage/requirements.yml*
+7. Добавляем в travis наш репозиторий и создаем .travis.yml
+8. Создаем в нашем новом репозитории шаблон для молекулы используя driver gce *molecule init scenario --scenario-name default -r db -d gce*
+9. Разбираемся с креденшиалами
+10. Переделываем **molecule.yml**  под наши нужды:
+```
+platforms:
+  - name: instance-travis
+    zone: europe-west1-b
+    machine_type: f1-micro
+    image: ubuntu-1604-xenial-v20170919
+```
+11. Модифицируем .travis.yml
+```
+language: python
+python:
+- '2.7'
+install:
+- pip install ansible==2.3.0 molecule==2.14 apache-libcloud Jinja2==2.10 PyYAML==3.12
+env:
+  matrix:
+  - GCE_CREDENTIALS_FILE="$(pwd)/credentials.json"
+  global:
+ .....
+script:
+- molecule create
+- molecule converge
+- molecule verify
+after_script:
+- molecule destroy
+before_install:
+- openssl aes-256-cbc -K $encrypted_3b9f0b9d36d1_key -iv $encrypted_3b9f0b9d36d1_iv
+  -in secrets.tar.enc -out secrets.tar -d
+- tar xvf secrets.tar
+- mv google_compute_engine /home/travis/.ssh/
+- chmod 0600 /home/travis/.ssh/google_compute_engine
+```
+
+12. Добавляем оповещения в slack
+```
+notifications:
+  slack: devops-team-otus:OQW5TMOgNIemU6RvI9YkzKYc
+```
+13. Добавляем статус билда в REAME.md
+
 ---
 ## Работа с ролями и окружениями Ansible
 #### Выполненные работы
